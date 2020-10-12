@@ -41,7 +41,7 @@ namespace WeMe.Controllers
             var user = _userService.Authenticate(model.Email, model.Password);
 
             if (user == null)
-                return BadRequest(new { message = "Username or password is incorrect" });
+                return BadRequest(new { status = 0, message = "Tài khoản hoặc mật khẩu không chính xác" });
 
             var tokenHandler = new JwtSecurityTokenHandler();
             var key = Encoding.ASCII.GetBytes(_configuration["JWT:Secret"]);

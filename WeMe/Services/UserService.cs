@@ -57,10 +57,10 @@ namespace WeMe.Services
         {
             // validation
             if (string.IsNullOrWhiteSpace(password))
-                throw new Exception("Password is required");
+                throw new Exception("Vui lòng nhập mật khẩu");
 
             if (_context.Users.Any(x => x.Email == user.Email))
-                throw new Exception("Email \"" + user.Email + "\" is already taken");
+                throw new Exception("Email \"" + user.Email + "\" đã được đăng ký bởi tài khoản khác");
 
             byte[] passwordHash, passwordSalt;
             CreatePasswordHash(password, out passwordHash, out passwordSalt);
