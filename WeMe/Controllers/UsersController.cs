@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
+using System.IO;
 using System.Linq;
+using System.Net.Http.Headers;
 using System.Security.Claims;
 using System.Text;
 using System.Threading.Tasks;
@@ -25,13 +27,14 @@ namespace WeMe.Controllers
         private readonly IUserService _userService;
         private readonly WeMeContext _context;
         private readonly IConfiguration _configuration;
-        //private readonly ITestService _test;
+        private readonly IFileService _fileService;
 
-        public UsersController(WeMeContext context, IUserService userService, IConfiguration configuration)
+        public UsersController(WeMeContext context, IConfiguration configuration, IUserService userService, IFileService fileService)
         {
             _context = context;
-            _userService = userService;
             _configuration = configuration;
+            _userService = userService;
+            _fileService = fileService;
         }
 
         [AllowAnonymous]
@@ -124,17 +127,26 @@ namespace WeMe.Controllers
         // To protect from overposting attacks, enable the specific properties you want to bind to, for
         // more details, see https://go.microsoft.com/fwlink/?linkid=2123754.
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutUsers(int id, Users users)
+        public async Task<IActionResult> PutUsers(int id, [FromForm] UpdateModel model)
         {
-            if (id != users.Id)
-            {
-                return BadRequest();
-            }
-
-            _context.Entry(users).State = EntityState.Modified;
-
             try
             {
+                var user = _context.Users.Find(id);
+
+                user.FullName = model.FullName;
+                user.PhoneNumber = model.PhoneNumber;
+                user.Address = model.Address;
+
+                string avatar = _fileService.WriteFile(model.Avatar);
+
+                if(avatar == null)
+                {
+                    return NotFound();
+                }
+
+                user.Avatar = avatar;
+
+                _context.Users.Update(user);
                 await _context.SaveChangesAsync();
             }
             catch (DbUpdateConcurrencyException)
@@ -149,8 +161,37 @@ namespace WeMe.Controllers
                 }
             }
 
-            return NoContent();
+            return Ok(new { status = true });
         }
+
+        //[HttpPost("edit/{id}"), DisableRequestSizeLimit]
+        //public async Task<IActionResult> EditUsers(int id, [FromForm] UpdateModel model)
+        //{
+        //    try
+        //    {
+        //        //var file = Request.Form.Files[0];
+        //        var file = model.Avatar;
+        //        var pathToSave = Path.Combine(Directory.GetCurrentDirectory(), "Uploads/images");
+        //        if (file.Length > 0)
+        //        {
+        //            var fileName = ContentDispositionHeaderValue.Parse(file.ContentDisposition).FileName.Trim('"');
+        //            var fullPath = Path.Combine(pathToSave, fileName);
+        //            using (var stream = new FileStream(fullPath, FileMode.Create))
+        //            {
+        //                file.CopyTo(stream);
+        //            }
+        //            return Ok(new { fullPath });
+        //        }
+        //        else
+        //        {
+        //            return Ok();
+        //        }
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        return StatusCode(500, $"Internal server error: {ex}");
+        //    }
+        //}
 
         // POST: api/Users
         // To protect from overposting attacks, enable the specific properties you want to bind to, for
@@ -183,6 +224,13 @@ namespace WeMe.Controllers
         private bool UsersExists(int id)
         {
             return _context.Users.Any(e => e.Id == id);
+        }
+
+        [AllowAnonymous]
+        [HttpGet("welcome")]
+        public ActionResult Welcome()
+        {
+            return Ok(new { text = "Welcome" });
         }
     }
 }

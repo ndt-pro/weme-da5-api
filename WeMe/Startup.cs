@@ -15,6 +15,10 @@ using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
 using WeMe.Services;
 using WeMe.Models;
+using Microsoft.AspNetCore.Http.Features;
+using Microsoft.Extensions.FileProviders;
+using System.IO;
+using Microsoft.AspNetCore.Http;
 
 namespace WeMe
 {
@@ -35,6 +39,8 @@ namespace WeMe
 
             services.AddCors();
             services.AddControllers();
+
+            services.AddDirectoryBrowser();
 
             var key = Encoding.ASCII.GetBytes(Configuration["JWT:Secret"]);
             services.AddAuthentication(x =>
@@ -72,7 +78,8 @@ namespace WeMe
 
             //configure DI for application services
 
-           services.AddScoped<IUserService, UserService>();
+            services.AddScoped<IUserService, UserService>();
+            services.AddScoped<IFileService, FileService>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -82,6 +89,16 @@ namespace WeMe
             {
                 app.UseDeveloperExceptionPage();
             }
+
+            app.UseStaticFiles();
+
+            app.UseFileServer(new FileServerOptions
+            {
+                FileProvider = new PhysicalFileProvider(
+                    Path.Combine(env.ContentRootPath, "Uploads")),
+                RequestPath = "/Uploads",
+                EnableDirectoryBrowsing = false
+            });
 
             app.UseRouting();
 
