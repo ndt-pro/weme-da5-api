@@ -46,7 +46,7 @@ namespace WeMe.Models
                 entity.Property(e => e.Description)
                     .IsRequired()
                     .HasColumnName("description")
-                    .HasColumnType("text");
+                    .HasColumnType("ntext");
 
                 entity.Property(e => e.Name)
                     .IsRequired()
@@ -63,7 +63,7 @@ namespace WeMe.Models
                 entity.Property(e => e.Content)
                     .IsRequired()
                     .HasColumnName("content")
-                    .HasColumnType("text");
+                    .HasColumnType("ntext");
 
                 entity.Property(e => e.CreatedAt)
                     .HasColumnName("created_at")
@@ -93,7 +93,7 @@ namespace WeMe.Models
                 entity.Property(e => e.Content)
                     .IsRequired()
                     .HasColumnName("content")
-                    .HasColumnType("text");
+                    .HasColumnType("ntext");
 
                 entity.Property(e => e.CreatedAt)
                     .HasColumnName("created_at")
@@ -164,7 +164,7 @@ namespace WeMe.Models
                 entity.Property(e => e.Content)
                     .IsRequired()
                     .HasColumnName("content")
-                    .HasColumnType("text");
+                    .HasColumnType("ntext");
 
                 entity.Property(e => e.CreatedAt)
                     .HasColumnName("created_at")
@@ -188,7 +188,7 @@ namespace WeMe.Models
                 entity.Property(e => e.Content)
                     .IsRequired()
                     .HasColumnName("content")
-                    .HasColumnType("text");
+                    .HasColumnType("ntext");
 
                 entity.Property(e => e.CreatedAt)
                     .HasColumnName("created_at")
@@ -243,7 +243,7 @@ namespace WeMe.Models
                 entity.Property(e => e.Content)
                     .IsRequired()
                     .HasColumnName("content")
-                    .HasColumnType("text");
+                    .HasColumnType("ntext");
 
                 entity.Property(e => e.CreatedAt)
                     .HasColumnName("created_at")

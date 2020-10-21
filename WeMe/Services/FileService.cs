@@ -10,20 +10,20 @@ namespace WeMe.Services
 {
     public interface IFileService
     {
-        void SetDir(string path);
-        string WriteFile(IFormFile file);
+        string WriteFile(IFormFile file, int type);
     }
 
     public class FileService : IFileService
     {
         private string dir = "Uploads/images";
-        public void SetDir(string dir)
-        {
-            this.dir = dir;
-        }
+        private string[] types = new string[] {
+            "/avatars",
+            "/threads",
+        };
 
-        public string WriteFile(IFormFile file)
+        public string WriteFile(IFormFile file, int type = 0)
         {
+            string dir = this.dir + types[type];
             try
             {
                 var pathToSave = Path.Combine(Directory.GetCurrentDirectory(), dir);

@@ -137,7 +137,7 @@ namespace WeMe.Controllers
                 user.PhoneNumber = model.PhoneNumber;
                 user.Address = model.Address;
 
-                string avatar = _fileService.WriteFile(model.Avatar);
+                string avatar = _fileService.WriteFile(model.Avatar, 0);
 
                 if(avatar == null)
                 {
