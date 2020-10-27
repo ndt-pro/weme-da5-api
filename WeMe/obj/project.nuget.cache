@@ -1,9 +1,10 @@
 {
   "version": 2,
-  "dgSpecHash": "ov/n9CWvGjyfq2UkxqII1HPlZLje1dSQfNJPCf1cIoOGsgTUr6EymsoTGy6yCqmg5e1E1b2zRPwsav8hGaKD3Q==",
+  "dgSpecHash": "scFTsdywwMrOX06GGLWas2oU/CK+Rat1DZNheVJCvfPUauL5Lw17NbhRh+pL5GJPAlCJCYV8JJHt1Ls1Jdj6mQ==",
   "success": true,
   "projectFilePath": "C:\\Users\\Toan Nguyen\\Documents\\Visual Studio 2019\\Projects\\WeMe\\WeMe\\WeMe.csproj",
   "expectedPackageFiles": [
+    "C:\\Users\\Toan Nguyen\\.nuget\\packages\\bcrypt.net-next\\4.0.0\\bcrypt.net-next.4.0.0.nupkg.sha512",
     "C:\\Users\\Toan Nguyen\\.nuget\\packages\\microsoft.aspnetcore.authentication.jwtbearer\\3.1.8\\microsoft.aspnetcore.authentication.jwtbearer.3.1.8.nupkg.sha512",
     "C:\\Users\\Toan Nguyen\\.nuget\\packages\\microsoft.aspnetcore.html.abstractions\\2.2.0\\microsoft.aspnetcore.html.abstractions.2.2.0.nupkg.sha512",
     "C:\\Users\\Toan Nguyen\\.nuget\\packages\\microsoft.aspnetcore.razor\\2.2.0\\microsoft.aspnetcore.razor.2.2.0.nupkg.sha512",

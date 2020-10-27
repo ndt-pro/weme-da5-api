@@ -15,15 +15,10 @@ namespace WeMe.Models
         {
         }
 
-        public virtual DbSet<Categories> Categories { get; set; }
         public virtual DbSet<Messages> Messages { get; set; }
         public virtual DbSet<NewfeedComments> NewfeedComments { get; set; }
-        public virtual DbSet<NewfeedImages> NewfeedImages { get; set; }
         public virtual DbSet<NewfeedLikes> NewfeedLikes { get; set; }
         public virtual DbSet<Newfeeds> Newfeeds { get; set; }
-        public virtual DbSet<ThreadComments> ThreadComments { get; set; }
-        public virtual DbSet<ThreadLikes> ThreadLikes { get; set; }
-        public virtual DbSet<Threads> Threads { get; set; }
         public virtual DbSet<Users> Users { get; set; }
 
 //        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
@@ -37,23 +32,6 @@ namespace WeMe.Models
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            modelBuilder.Entity<Categories>(entity =>
-            {
-                entity.ToTable("categories");
-
-                entity.Property(e => e.Id).HasColumnName("id");
-
-                entity.Property(e => e.Description)
-                    .IsRequired()
-                    .HasColumnName("description")
-                    .HasColumnType("ntext");
-
-                entity.Property(e => e.Name)
-                    .IsRequired()
-                    .HasColumnName("name")
-                    .HasMaxLength(200);
-            });
-
             modelBuilder.Entity<Messages>(entity =>
             {
                 entity.ToTable("messages");
@@ -71,17 +49,19 @@ namespace WeMe.Models
 
                 entity.Property(e => e.FromUserId).HasColumnName("from_user_id");
 
+                entity.Property(e => e.Status).HasColumnName("status");
+
                 entity.Property(e => e.ToUserId).HasColumnName("to_user_id");
 
                 entity.HasOne(d => d.FromUser)
                     .WithMany(p => p.MessagesFromUser)
                     .HasForeignKey(d => d.FromUserId)
-                    .HasConstraintName("FK__messages__from_u__52593CB8");
+                    .HasConstraintName("FK__messages__from_u__4316F928");
 
                 entity.HasOne(d => d.ToUser)
                     .WithMany(p => p.MessagesToUser)
                     .HasForeignKey(d => d.ToUserId)
-                    .HasConstraintName("FK__messages__to_use__534D60F1");
+                    .HasConstraintName("FK__messages__to_use__440B1D61");
             });
 
             modelBuilder.Entity<NewfeedComments>(entity =>
@@ -106,31 +86,13 @@ namespace WeMe.Models
                 entity.HasOne(d => d.IdNewfeedNavigation)
                     .WithMany(p => p.NewfeedComments)
                     .HasForeignKey(d => d.IdNewfeed)
-                    .HasConstraintName("FK__newfeed_c__id_ne__4222D4EF");
+                    .HasConstraintName("FK__newfeed_c__id_ne__3F466844");
 
                 entity.HasOne(d => d.IdUserNavigation)
                     .WithMany(p => p.NewfeedComments)
                     .HasForeignKey(d => d.IdUser)
                     .OnDelete(DeleteBehavior.Cascade)
-                    .HasConstraintName("FK__newfeed_c__id_us__4316F928");
-            });
-
-            modelBuilder.Entity<NewfeedImages>(entity =>
-            {
-                entity.ToTable("newfeed_images");
-
-                entity.Property(e => e.Id).HasColumnName("id");
-
-                entity.Property(e => e.IdNewfeed).HasColumnName("id_newfeed");
-
-                entity.Property(e => e.Image)
-                    .HasColumnName("image")
-                    .HasMaxLength(200);
-
-                entity.HasOne(d => d.IdNewfeedNavigation)
-                    .WithMany(p => p.NewfeedImages)
-                    .HasForeignKey(d => d.IdNewfeed)
-                    .HasConstraintName("FK__newfeed_i__id_ne__3B75D760");
+                    .HasConstraintName("FK__newfeed_c__id_us__403A8C7D");
             });
 
             modelBuilder.Entity<NewfeedLikes>(entity =>
@@ -146,13 +108,13 @@ namespace WeMe.Models
                 entity.HasOne(d => d.IdNewfeedNavigation)
                     .WithMany(p => p.NewfeedLikes)
                     .HasForeignKey(d => d.IdNewfeed)
-                    .HasConstraintName("FK__newfeed_l__id_ne__3E52440B");
+                    .HasConstraintName("FK__newfeed_l__id_ne__3B75D760");
 
                 entity.HasOne(d => d.IdUserNavigation)
                     .WithMany(p => p.NewfeedLikes)
                     .HasForeignKey(d => d.IdUser)
                     .OnDelete(DeleteBehavior.Cascade)
-                    .HasConstraintName("FK__newfeed_l__id_us__3F466844");
+                    .HasConstraintName("FK__newfeed_l__id_us__3C69FB99");
             });
 
             modelBuilder.Entity<Newfeeds>(entity =>
@@ -172,96 +134,15 @@ namespace WeMe.Models
 
                 entity.Property(e => e.IdUser).HasColumnName("id_user");
 
+                entity.Property(e => e.Media)
+                    .IsRequired()
+                    .HasColumnName("media");
+
                 entity.HasOne(d => d.IdUserNavigation)
                     .WithMany(p => p.Newfeeds)
                     .HasForeignKey(d => d.IdUser)
                     .OnDelete(DeleteBehavior.Cascade)
                     .HasConstraintName("FK__newfeeds__id_use__38996AB5");
-            });
-
-            modelBuilder.Entity<ThreadComments>(entity =>
-            {
-                entity.ToTable("thread_comments");
-
-                entity.Property(e => e.Id).HasColumnName("id");
-
-                entity.Property(e => e.Content)
-                    .IsRequired()
-                    .HasColumnName("content")
-                    .HasColumnType("ntext");
-
-                entity.Property(e => e.CreatedAt)
-                    .HasColumnName("created_at")
-                    .HasColumnType("datetime");
-
-                entity.Property(e => e.IdThread).HasColumnName("id_thread");
-
-                entity.Property(e => e.IdUser).HasColumnName("id_user");
-
-                entity.HasOne(d => d.IdThreadNavigation)
-                    .WithMany(p => p.ThreadComments)
-                    .HasForeignKey(d => d.IdThread)
-                    .OnDelete(DeleteBehavior.Cascade)
-                    .HasConstraintName("FK__thread_co__id_th__4E88ABD4");
-
-                entity.HasOne(d => d.IdUserNavigation)
-                    .WithMany(p => p.ThreadComments)
-                    .HasForeignKey(d => d.IdUser)
-                    .OnDelete(DeleteBehavior.Cascade)
-                    .HasConstraintName("FK__thread_co__id_us__4F7CD00D");
-            });
-
-            modelBuilder.Entity<ThreadLikes>(entity =>
-            {
-                entity.ToTable("thread_likes");
-
-                entity.Property(e => e.Id).HasColumnName("id");
-
-                entity.Property(e => e.IdThread).HasColumnName("id_thread");
-
-                entity.Property(e => e.IdUser).HasColumnName("id_user");
-
-                entity.HasOne(d => d.IdThreadNavigation)
-                    .WithMany(p => p.ThreadLikes)
-                    .HasForeignKey(d => d.IdThread)
-                    .OnDelete(DeleteBehavior.Cascade)
-                    .HasConstraintName("FK__thread_li__id_th__4AB81AF0");
-
-                entity.HasOne(d => d.IdUserNavigation)
-                    .WithMany(p => p.ThreadLikes)
-                    .HasForeignKey(d => d.IdUser)
-                    .OnDelete(DeleteBehavior.Cascade)
-                    .HasConstraintName("FK__thread_li__id_us__4BAC3F29");
-            });
-
-            modelBuilder.Entity<Threads>(entity =>
-            {
-                entity.ToTable("threads");
-
-                entity.Property(e => e.Id).HasColumnName("id");
-
-                entity.Property(e => e.Content)
-                    .IsRequired()
-                    .HasColumnName("content")
-                    .HasColumnType("ntext");
-
-                entity.Property(e => e.CreatedAt)
-                    .HasColumnName("created_at")
-                    .HasColumnType("datetime");
-
-                entity.Property(e => e.IdCategory).HasColumnName("id_category");
-
-                entity.Property(e => e.Pin).HasColumnName("pin");
-
-                entity.Property(e => e.Tags)
-                    .HasColumnName("tags")
-                    .HasMaxLength(250);
-
-                entity.HasOne(d => d.IdCategoryNavigation)
-                    .WithMany(p => p.Threads)
-                    .HasForeignKey(d => d.IdCategory)
-                    .OnDelete(DeleteBehavior.Cascade)
-                    .HasConstraintName("FK__threads__id_cate__47DBAE45");
             });
 
             modelBuilder.Entity<Users>(entity =>
@@ -270,14 +151,15 @@ namespace WeMe.Models
 
                 entity.Property(e => e.Id).HasColumnName("id");
 
-                entity.Property(e => e.Address)
-                    .HasColumnName("address")
-                    .HasMaxLength(200);
+                entity.Property(e => e.Address).HasColumnName("address");
 
                 entity.Property(e => e.Avatar)
                     .IsRequired()
-                    .HasColumnName("avatar")
-                    .HasMaxLength(200);
+                    .HasColumnName("avatar");
+
+                entity.Property(e => e.Birthday)
+                    .HasColumnName("birthday")
+                    .HasColumnType("date");
 
                 entity.Property(e => e.CreatedAt)
                     .HasColumnName("created_at")
@@ -293,17 +175,9 @@ namespace WeMe.Models
                     .HasColumnName("full_name")
                     .HasMaxLength(50);
 
-                entity.Property(e => e.PasswordHash)
+                entity.Property(e => e.Password)
                     .IsRequired()
-                    .HasColumnName("password_hash")
-                    .HasMaxLength(64)
-                    .IsFixedLength();
-
-                entity.Property(e => e.PasswordSalt)
-                    .IsRequired()
-                    .HasColumnName("password_salt")
-                    .HasMaxLength(128)
-                    .IsFixedLength();
+                    .HasColumnName("password");
 
                 entity.Property(e => e.PhoneNumber)
                     .HasColumnName("phone_number")
@@ -312,6 +186,8 @@ namespace WeMe.Models
                     .IsFixedLength();
 
                 entity.Property(e => e.Role).HasColumnName("role");
+
+                entity.Property(e => e.Story).HasColumnName("story");
             });
 
             OnModelCreatingPartial(modelBuilder);

@@ -151,5 +151,6 @@ C:\Users\Toan Nguyen\Documents\Visual Studio 2019\Projects\WeMe\WeMe\bin\Debug\n
 C:\Users\Toan Nguyen\Documents\Visual Studio 2019\Projects\WeMe\WeMe\bin\Debug\netcoreapp3.1\runtimes\win-arm64\native\e_sqlite3.dll
 C:\Users\Toan Nguyen\Documents\Visual Studio 2019\Projects\WeMe\WeMe\bin\Debug\netcoreapp3.1\runtimes\win-x64\native\e_sqlite3.dll
 C:\Users\Toan Nguyen\Documents\Visual Studio 2019\Projects\WeMe\WeMe\bin\Debug\netcoreapp3.1\runtimes\win-x86\native\e_sqlite3.dll
+C:\Users\Toan Nguyen\Documents\Visual Studio 2019\Projects\WeMe\WeMe\bin\Debug\netcoreapp3.1\BCrypt.Net-Next.dll
 C:\Users\Toan Nguyen\Documents\Visual Studio 2019\Projects\WeMe\WeMe\obj\Debug\netcoreapp3.1\WeMe.csproj.CoreCompileInputs.cache
 C:\Users\Toan Nguyen\Documents\Visual Studio 2019\Projects\WeMe\WeMe\obj\Debug\netcoreapp3.1\WeMe.MvcApplicationPartsAssemblyInfo.cache

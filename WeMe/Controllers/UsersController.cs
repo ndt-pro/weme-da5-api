@@ -13,7 +13,6 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
-using WebApi.Models.Users;
 using WeMe.Models;
 using WeMe.Services;
 
@@ -24,24 +23,27 @@ namespace WeMe.Controllers
     [ApiController]
     public class UsersController : ControllerBase
     {
-        private readonly IUserService _userService;
+        private readonly IAuthenticateService _authenticateService;
         private readonly WeMeContext _context;
         private readonly IConfiguration _configuration;
         private readonly IFileService _fileService;
 
-        public UsersController(WeMeContext context, IConfiguration configuration, IUserService userService, IFileService fileService)
+        public UsersController(WeMeContext context, IConfiguration configuration, IAuthenticateService authenticateService, IFileService fileService)
         {
             _context = context;
             _configuration = configuration;
-            _userService = userService;
+            _authenticateService = authenticateService;
             _fileService = fileService;
         }
 
         [AllowAnonymous]
         [HttpPost("login")]
-        public IActionResult Authenticate([FromBody] AuthenticateModel model)
+        public IActionResult Login([FromBody] Dictionary<string, object> formData)
         {
-            var user = _userService.Authenticate(model.Email, model.Password);
+            string email = formData["Email"].ToString();
+            string password = formData["Password"].ToString();
+
+            var user = _authenticateService.Authenticate(email, password);
 
             if (user == null)
                 return BadRequest(new { status = 0, message = "Tài khoản hoặc mật khẩu không chính xác" });
@@ -63,36 +65,31 @@ namespace WeMe.Controllers
             // return basic user info and authentication token
             return Ok(new
             {
-                id = user.Id,
-                email = user.Email,
-                phoneNumber = user.PhoneNumber,
-                fullName = user.FullName,
-                address = user.Address,
-                avatar = user.Avatar,
-                role = user.Role,
-                createdAt = user.CreatedAt,
+                user,
                 token = tokenString
             });
         }
 
         [AllowAnonymous]
         [HttpPost("register")]
-        public IActionResult Register([FromBody] RegisterModel model)
+        public IActionResult Register([FromBody] Dictionary<string, object> formData)
         {
             try
             {
+                string password = formData["Password"].ToString();
+
                 // create user
                 var user = new Users();
 
-                user.Email = model.Email;
-                user.PhoneNumber = model.PhoneNumber;
-                user.FullName = model.FullName;
-                user.Address = model.Address;
+                user.Email = formData["Email"].ToString();
+                user.FullName = formData["FullName"].ToString();
+                user.PhoneNumber = formData["PhoneNumber"].ToString();
+                user.Address = formData["Address"].ToString();
                 user.Avatar = "anonymous.jpg";
                 user.Role = 0;
                 user.CreatedAt = DateTime.Now;
 
-                user = _userService.Create(user, model.Password);
+                user = _authenticateService.Create(user, password);
                 return Ok(user);
             }
             catch (Exception ex)
@@ -123,31 +120,31 @@ namespace WeMe.Controllers
             return users;
         }
 
-        // PUT: api/Users/5
-        // To protect from overposting attacks, enable the specific properties you want to bind to, for
-        // more details, see https://go.microsoft.com/fwlink/?linkid=2123754.
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutUsers(int id, [FromForm] UpdateModel model)
+        public async Task<IActionResult> PutUsers(int id, [FromBody] Users users)
         {
             try
             {
                 var user = _context.Users.Find(id);
 
-                user.FullName = model.FullName;
-                user.PhoneNumber = model.PhoneNumber;
-                user.Address = model.Address;
+                user.FullName = users.FullName;
+                user.PhoneNumber = users.PhoneNumber;
+                user.Address = users.Address;
+                user.Story = users.Story;
+                user.Birthday = users.Birthday.GetValueOrDefault().AddDays(1);
 
-                string avatar = _fileService.WriteFile(model.Avatar, 0);
-
-                if(avatar == null)
+                if(users.Avatar != null)
                 {
-                    return NotFound();
+                    if ((user.Avatar = _fileService.WriteFileBase64(users.Avatar)) == null)
+                    {
+                        user.Avatar = "anonymous.jpg";
+                    }
                 }
-
-                user.Avatar = avatar;
 
                 _context.Users.Update(user);
                 await _context.SaveChangesAsync();
+
+                return Ok(new { status = true , user});
             }
             catch (DbUpdateConcurrencyException)
             {
@@ -160,49 +157,6 @@ namespace WeMe.Controllers
                     throw;
                 }
             }
-
-            return Ok(new { status = true });
-        }
-
-        //[HttpPost("edit/{id}"), DisableRequestSizeLimit]
-        //public async Task<IActionResult> EditUsers(int id, [FromForm] UpdateModel model)
-        //{
-        //    try
-        //    {
-        //        //var file = Request.Form.Files[0];
-        //        var file = model.Avatar;
-        //        var pathToSave = Path.Combine(Directory.GetCurrentDirectory(), "Uploads/images");
-        //        if (file.Length > 0)
-        //        {
-        //            var fileName = ContentDispositionHeaderValue.Parse(file.ContentDisposition).FileName.Trim('"');
-        //            var fullPath = Path.Combine(pathToSave, fileName);
-        //            using (var stream = new FileStream(fullPath, FileMode.Create))
-        //            {
-        //                file.CopyTo(stream);
-        //            }
-        //            return Ok(new { fullPath });
-        //        }
-        //        else
-        //        {
-        //            return Ok();
-        //        }
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        return StatusCode(500, $"Internal server error: {ex}");
-        //    }
-        //}
-
-        // POST: api/Users
-        // To protect from overposting attacks, enable the specific properties you want to bind to, for
-        // more details, see https://go.microsoft.com/fwlink/?linkid=2123754.
-        [HttpPost]
-        public async Task<ActionResult<Users>> PostUsers(Users users)
-        {
-            _context.Users.Add(users);
-            await _context.SaveChangesAsync();
-
-            return CreatedAtAction("GetUsers", new { id = users.Id }, users);
         }
 
         // DELETE: api/Users/5

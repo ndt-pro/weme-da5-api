@@ -54,7 +54,7 @@ namespace WeMe
                 {
                     OnTokenValidated = context =>
                     {
-                        var userService = context.HttpContext.RequestServices.GetRequiredService<IUserService>();
+                        var userService = context.HttpContext.RequestServices.GetRequiredService<IAuthenticateService>();
                         var userId = int.Parse(context.Principal.Identity.Name);
                         var user = userService.GetById(userId);
                         if (user == null)
@@ -78,7 +78,7 @@ namespace WeMe
 
             //configure DI for application services
 
-            services.AddScoped<IUserService, UserService>();
+            services.AddScoped<IAuthenticateService, AuthenticateService>();
             services.AddScoped<IFileService, FileService>();
         }
 
