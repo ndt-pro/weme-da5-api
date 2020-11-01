@@ -19,7 +19,8 @@
 
   <ItemGroup>
     <Folder Include="Uploads\images\avatars\" />
-    <Folder Include="Uploads\images\threads\" />
+    <Folder Include="Uploads\images\newfeeds\" />
+    <Folder Include="Uploads\images\messages\" />
   </ItemGroup>
 
 

@@ -15,23 +15,46 @@ namespace WeMe.Models
         {
         }
 
+        public virtual DbSet<Messagebox> Messagebox { get; set; }
         public virtual DbSet<Messages> Messages { get; set; }
         public virtual DbSet<NewfeedComments> NewfeedComments { get; set; }
         public virtual DbSet<NewfeedLikes> NewfeedLikes { get; set; }
         public virtual DbSet<Newfeeds> Newfeeds { get; set; }
+        public virtual DbSet<Notification> Notification { get; set; }
         public virtual DbSet<Users> Users { get; set; }
 
-//        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-//        {
-//            if (!optionsBuilder.IsConfigured)
-//            {
-//#warning To protect potentially sensitive information in your connection string, you should move it out of source code. See http://go.microsoft.com/fwlink/?LinkId=723263 for guidance on storing connection strings.
-//                optionsBuilder.UseSqlServer("Server=NDTPRO\\SQLEXPRESS;Database=WeMe;Integrated Security=True");
-//            }
-//        }
+        //        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+        //        {
+        //            if (!optionsBuilder.IsConfigured)
+        //            {
+        //#warning To protect potentially sensitive information in your connection string, you should move it out of source code. See http://go.microsoft.com/fwlink/?LinkId=723263 for guidance on storing connection strings.
+        //                optionsBuilder.UseSqlServer("Server=NDTPRO\\SQLEXPRESS;Database=WeMe;Integrated Security=True");
+        //            }
+        //        }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            modelBuilder.Entity<Messagebox>(entity =>
+            {
+                entity.ToTable("messagebox");
+
+                entity.Property(e => e.Id).HasColumnName("id");
+
+                entity.Property(e => e.FromUserId).HasColumnName("from_user_id");
+
+                entity.Property(e => e.ToUserId).HasColumnName("to_user_id");
+
+                entity.HasOne(d => d.FromUser)
+                    .WithMany(p => p.MessageboxFromUser)
+                    .HasForeignKey(d => d.FromUserId)
+                    .HasConstraintName("FK__messagebo__from___47DBAE45");
+
+                entity.HasOne(d => d.ToUser)
+                    .WithMany(p => p.MessageboxToUser)
+                    .HasForeignKey(d => d.ToUserId)
+                    .HasConstraintName("FK__messagebo__to_us__48CFD27E");
+            });
+
             modelBuilder.Entity<Messages>(entity =>
             {
                 entity.ToTable("messages");
@@ -49,6 +72,8 @@ namespace WeMe.Models
 
                 entity.Property(e => e.FromUserId).HasColumnName("from_user_id");
 
+                entity.Property(e => e.Media).HasColumnName("media");
+
                 entity.Property(e => e.Status).HasColumnName("status");
 
                 entity.Property(e => e.ToUserId).HasColumnName("to_user_id");
@@ -56,12 +81,12 @@ namespace WeMe.Models
                 entity.HasOne(d => d.FromUser)
                     .WithMany(p => p.MessagesFromUser)
                     .HasForeignKey(d => d.FromUserId)
-                    .HasConstraintName("FK__messages__from_u__4316F928");
+                    .HasConstraintName("FK__messages__from_u__440B1D61");
 
                 entity.HasOne(d => d.ToUser)
                     .WithMany(p => p.MessagesToUser)
                     .HasForeignKey(d => d.ToUserId)
-                    .HasConstraintName("FK__messages__to_use__440B1D61");
+                    .HasConstraintName("FK__messages__to_use__44FF419A");
             });
 
             modelBuilder.Entity<NewfeedComments>(entity =>
@@ -86,13 +111,12 @@ namespace WeMe.Models
                 entity.HasOne(d => d.IdNewfeedNavigation)
                     .WithMany(p => p.NewfeedComments)
                     .HasForeignKey(d => d.IdNewfeed)
-                    .HasConstraintName("FK__newfeed_c__id_ne__3F466844");
+                    .HasConstraintName("FK__newfeed_c__id_ne__403A8C7D");
 
                 entity.HasOne(d => d.IdUserNavigation)
                     .WithMany(p => p.NewfeedComments)
                     .HasForeignKey(d => d.IdUser)
-                    .OnDelete(DeleteBehavior.Cascade)
-                    .HasConstraintName("FK__newfeed_c__id_us__403A8C7D");
+                    .HasConstraintName("FK__newfeed_c__id_us__412EB0B6");
             });
 
             modelBuilder.Entity<NewfeedLikes>(entity =>
@@ -108,13 +132,12 @@ namespace WeMe.Models
                 entity.HasOne(d => d.IdNewfeedNavigation)
                     .WithMany(p => p.NewfeedLikes)
                     .HasForeignKey(d => d.IdNewfeed)
-                    .HasConstraintName("FK__newfeed_l__id_ne__3B75D760");
+                    .HasConstraintName("FK__newfeed_l__id_ne__3C69FB99");
 
                 entity.HasOne(d => d.IdUserNavigation)
                     .WithMany(p => p.NewfeedLikes)
                     .HasForeignKey(d => d.IdUser)
-                    .OnDelete(DeleteBehavior.Cascade)
-                    .HasConstraintName("FK__newfeed_l__id_us__3C69FB99");
+                    .HasConstraintName("FK__newfeed_l__id_us__3D5E1FD2");
             });
 
             modelBuilder.Entity<Newfeeds>(entity =>
@@ -134,20 +157,47 @@ namespace WeMe.Models
 
                 entity.Property(e => e.IdUser).HasColumnName("id_user");
 
-                entity.Property(e => e.Media)
-                    .IsRequired()
-                    .HasColumnName("media");
+                entity.Property(e => e.Media).HasColumnName("media");
 
                 entity.HasOne(d => d.IdUserNavigation)
                     .WithMany(p => p.Newfeeds)
                     .HasForeignKey(d => d.IdUser)
                     .OnDelete(DeleteBehavior.Cascade)
-                    .HasConstraintName("FK__newfeeds__id_use__38996AB5");
+                    .HasConstraintName("FK__newfeeds__id_use__398D8EEE");
+            });
+
+            modelBuilder.Entity<Notification>(entity =>
+            {
+                entity.ToTable("notification");
+
+                entity.Property(e => e.Id).HasColumnName("id");
+
+                entity.Property(e => e.Content)
+                    .IsRequired()
+                    .HasColumnName("content")
+                    .HasColumnType("ntext");
+
+                entity.Property(e => e.CreatedAt)
+                    .HasColumnName("created_at")
+                    .HasColumnType("datetime");
+
+                entity.Property(e => e.IdUser).HasColumnName("id_user");
+
+                entity.Property(e => e.Status).HasColumnName("status");
+
+                entity.HasOne(d => d.IdUserNavigation)
+                    .WithMany(p => p.Notification)
+                    .HasForeignKey(d => d.IdUser)
+                    .HasConstraintName("FK__notificat__id_us__4BAC3F29");
             });
 
             modelBuilder.Entity<Users>(entity =>
             {
                 entity.ToTable("users");
+
+                entity.HasIndex(e => e.Email)
+                    .HasName("UQ__users__AB6E6164A8C7D087")
+                    .IsUnique();
 
                 entity.Property(e => e.Id).HasColumnName("id");
 

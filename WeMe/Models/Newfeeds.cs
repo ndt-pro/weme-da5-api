@@ -21,4 +21,17 @@ namespace WeMe.Models
         public virtual ICollection<NewfeedComments> NewfeedComments { get; set; }
         public virtual ICollection<NewfeedLikes> NewfeedLikes { get; set; }
     }
+    public partial class NewfeedsClone
+    {
+        public string Content { get; set; }
+        public string[] Media { get; set; }
+
+        public Newfeeds get()
+        {
+            return new Newfeeds()
+            {
+                Content = Content,
+            };
+        }
+    }
 }

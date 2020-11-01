@@ -1,184 +1,240 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.InteropServices.WindowsRuntime;
 using System.Threading.Tasks;
+using BTL_API.Helper;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json;
 using WeMe.Models;
+using WeMe.Services;
 
 namespace WeMe.Controllers
 {
-    [Authorize]
+    //[Authorize]
     [Route("api/[controller]")]
     [ApiController]
     public class MessagesController : ControllerBase
     {
         private readonly WeMeContext _context;
+        private readonly IFileService _fileService;
 
-        public MessagesController(WeMeContext context)
+        public MessagesController(WeMeContext context, IFileService fileService)
         {
             _context = context;
+            _fileService = fileService;
         }
 
-        [HttpGet("get-mess-box/{id}")]
-        public ActionResult<Messages> GetMessageBox(int id)
+        [HttpGet("count-new-message")]
+        public ActionResult<Messages> CountNewMessage()
         {
-            var box = _context.Messages
-                .GroupBy(mess => new
-                {
-                    mess.FromUserId,
-                    mess.ToUserId,
-                    mess.ToUser.FullName,
-                    mess.ToUser.Avatar
-                })
+            int userId = int.Parse(User.Identity.Name);
+            var box = _context.Messagebox
+                .Where(mess => mess.FromUserId == userId && _context.Messages.OrderByDescending(m => m.Id).FirstOrDefault(messx => messx.FromUserId == mess.ToUserId && messx.ToUserId == mess.FromUserId).Status == 0)
                 .Select(mess => new
                 {
-                    from_id = mess.Key.FromUserId,
-                    to_id = mess.Key.ToUserId,
-                    to_name = mess.Key.FullName,
-                    avatar = mess.Key.Avatar,
-                    content = _context.Messages.OrderByDescending(m => m.Id)
-                                .FirstOrDefault(messx => (messx.ToUserId == mess.Key.ToUserId && messx.FromUserId == mess.Key.FromUserId) ||
-                                (messx.ToUserId == mess.Key.FromUserId && messx.FromUserId == mess.Key.ToUserId)).Content
+                    fromUserId = mess.ToUserId
+                });
+
+            return Ok(box);
+        }
+
+        [HttpGet("get-mess-box")]
+        public ActionResult<Messages> GetMessageBox()
+        {
+            int userId = int.Parse(User.Identity.Name);
+            //var box = _context.Messages
+            //    .GroupBy(mess => new
+            //    {
+            //        mess.FromUserId,
+            //        mess.ToUserId,
+            //        mess.ToUser.FullName,
+            //        mess.ToUser.Avatar
+            //    })
+            //    .Select(mess => new
+            //    {
+            //        from_id = mess.Key.FromUserId,
+            //        to_id = mess.Key.ToUserId,
+            //        to_name = mess.Key.FullName,
+            //        avatar = mess.Key.Avatar,
+            //        content = _context.Messages.OrderByDescending(m => m.Id)
+            //                    .FirstOrDefault(messx => (messx.ToUserId == mess.Key.ToUserId && messx.FromUserId == mess.Key.FromUserId) ||
+            //                    (messx.ToUserId == mess.Key.FromUserId && messx.FromUserId == mess.Key.ToUserId)).Content
+            //    })
+            //    .Where(mess => mess.from_id == id);
+
+            var box = _context.Messagebox
+                .Select(mess => new
+                {
+                    fromId = mess.FromUserId,
+                    toUser = new
+                    {
+                        mess.ToUser.Id,
+                        mess.ToUser.Avatar,
+                        mess.ToUser.FullName,
+                    },
+                    lastMessage = _context.Messages.OrderByDescending(m => m.Id)
+                        .Select(mess => new
+                        {
+                            mess.FromUserId,
+                            mess.ToUserId,
+                            mess.Content,
+                            status = mess.FromUserId == userId ? 1 : mess.Status,
+                            mess.CreatedAt,
+                        })
+                        .FirstOrDefault(messx => (messx.FromUserId == mess.FromUserId && messx.ToUserId == mess.ToUserId) || (messx.FromUserId == mess.ToUserId && messx.ToUserId == mess.FromUserId))
                 })
-                .Where(mess => mess.from_id == id);
+                .Where(mess => mess.fromId == userId)
+                .OrderByDescending(mess => mess.lastMessage.CreatedAt);
+
             return Ok(box);
         }
 
         [HttpGet("get-all-mess")]
-        public ActionResult<Messages> GetAllMessage(int from_id, int to_id)
+        public ActionResult<Messages> GetAllMessage(int to_id, int page)
         {
+            int userId = int.Parse(User.Identity.Name);
+
             var box = _context.Messages
                 .Select(mess => new
                 {
-                    from_id = mess.FromUserId,
-                    to_id = mess.ToUserId,
-                    from = new
+                    fromUser = new
                     {
-                        name = mess.FromUser.FullName,
-                        avatar = mess.FromUser.Avatar
+                        id = mess.FromUserId,
+                        mess.FromUser.FullName,
+                        mess.FromUser.Avatar
                     },
-                    to = new
+                    toUser = new
                     {
-                        name = mess.ToUser.FullName,
-                        avatar = mess.ToUser.Avatar
+                        id = mess.ToUserId,
+                        mess.ToUser.FullName,
+                        mess.ToUser.Avatar
                     },
-                    content = mess.Content
+                    mess.Content,
+                    mess.Media,
+                    mess.Status,
+                    mess.CreatedAt,
                 })
-                .Where(mess => (mess.from_id == from_id && mess.to_id == to_id) || (mess.from_id == to_id && mess.to_id == from_id));
-            return Ok(box);
+                .Where(mess => (mess.fromUser.id == userId && mess.toUser.id == to_id) || (mess.fromUser.id == to_id && mess.toUser.id == userId))
+                .OrderByDescending(mess => mess.CreatedAt);
+
+            var data = Pagination.GetPaged(box, page, 20);
+            return Ok(data.Results);
         }
 
         [HttpPost("send-message")]
-        public async Task<ActionResult<Messages>> SendMessage(Messages message)
+        public async Task<ActionResult<Messages>> SendMessage(MessagesClone messages)
         {
+            int userId = int.Parse(User.Identity.Name);
+
+            // them tin nhan
+            var message = messages.get();
+            message.FromUserId = userId;
+
+            string[] medias = new string[0];
+
+            foreach (var item in messages.Media)
+            {
+                var file = _fileService.WriteFileBase64(item, 2);
+                Array.Resize(ref medias, medias.Length + 1);
+                medias[medias.Length - 1] = file;
+            }
+
+            var json = JsonConvert.SerializeObject(medias);
+
+            message.Media = json;
+            message.Status = 0;
             message.CreatedAt = DateTime.Now;
+
             _context.Messages.Add(message);
             await _context.SaveChangesAsync();
 
-            var check = _context.Messages.FirstOrDefault(mess => mess.FromUserId == message.ToUserId && mess.ToUserId == message.FromUserId);
-
-            if (check == null)
+            // them loi tat tin nhan
+            // nguoi gui
+            if (!_context.Messagebox.Any(msgBox => msgBox.FromUserId == message.FromUserId && msgBox.ToUserId == message.ToUserId))
             {
-                Messages mess = new Messages();
-                mess.FromUserId = message.ToUserId;
-                mess.ToUserId = message.FromUserId;
-                mess.Content = "Bây giờ các bạn có thể chat với nhau.";
-                mess.CreatedAt = DateTime.Now;
-
-                _context.Messages.Add(mess);
+                _context.Messagebox.Add(new Messagebox()
+                {
+                    FromUserId = message.FromUserId,
+                    ToUserId = message.ToUserId,
+                });
                 await _context.SaveChangesAsync();
             }
 
-            return Ok(new { status = true, repli = check == null });
-        }
-
-        // GET: api/Messages
-        [HttpGet]
-        public async Task<ActionResult<IEnumerable<Messages>>> GetMessages()
-        {
-            return await _context.Messages.ToListAsync();
-        }
-
-        // GET: api/Messages/5
-        [HttpGet("{id}")]
-        public async Task<ActionResult<Messages>> GetMessages(int id)
-        {
-            var messages = await _context.Messages.FindAsync(id);
-
-            if (messages == null)
+            // nguoi nhan
+            if (!_context.Messagebox.Any(msgBox => msgBox.FromUserId == message.ToUserId && msgBox.ToUserId == message.FromUserId))
             {
-                return NotFound();
-            }
-
-            return messages;
-        }
-
-        // PUT: api/Messages/5
-        // To protect from overposting attacks, enable the specific properties you want to bind to, for
-        // more details, see https://go.microsoft.com/fwlink/?linkid=2123754.
-        [HttpPut("{id}")]
-        public async Task<IActionResult> PutMessages(int id, Messages messages)
-        {
-            if (id != messages.Id)
-            {
-                return BadRequest();
-            }
-
-            _context.Entry(messages).State = EntityState.Modified;
-
-            try
-            {
+                _context.Messagebox.Add(new Messagebox()
+                {
+                    FromUserId = message.ToUserId,
+                    ToUserId = message.FromUserId,
+                });
                 await _context.SaveChangesAsync();
             }
-            catch (DbUpdateConcurrencyException)
+
+            //var check = _context.Messages.FirstOrDefault(mess => mess.FromUserId == message.ToUserId && mess.ToUserId == message.FromUserId);
+
+            //if (check == null)
+            //{
+            //    Messages mess = new Messages();
+            //    mess.FromUserId = message.ToUserId;
+            //    mess.ToUserId = message.FromUserId;
+            //    mess.Content = "Bây giờ các bạn có thể chat với nhau.";
+            //    mess.CreatedAt = DateTime.Now;
+
+            //    _context.Messages.Add(mess);
+            //    await _context.SaveChangesAsync();
+            //}
+
+            message.FromUser = _context.Users.Find(message.FromUserId);
+            message.ToUser = _context.Users.Find(message.ToUserId);
+
+            return Ok(new
             {
-                if (!MessagesExists(id))
+                fromUser = new
                 {
-                    return NotFound();
-                }
-                else
+                    id = message.FromUserId,
+                    message.FromUser.FullName,
+                    message.FromUser.Avatar
+                },
+                toUser = new
                 {
-                    throw;
-                }
+                    id = message.ToUserId,
+                    message.ToUser.FullName,
+                    message.ToUser.Avatar
+                },
+                message.Content,
+                message.Media,
+                message.Status,
+            });
+        }
+
+        [HttpPut("see-message")]
+        public async Task<ActionResult> SeeMessages([FromBody] Dictionary<string, object> formData)
+        {
+            int userId = int.Parse(User.Identity.Name);
+
+            int toUserId = int.Parse(formData["toUserId"].ToString());
+
+            var messages = _context.Messages
+                .Where(mess => mess.FromUserId == userId && mess.ToUserId == toUserId && mess.Status == 0)
+                .ToList();
+
+            for (int i = 0; i < messages.Count; i++)
+            {
+                messages[i].Status = 1;
             }
 
-            return NoContent();
-        }
-
-        // POST: api/Messages
-        // To protect from overposting attacks, enable the specific properties you want to bind to, for
-        // more details, see https://go.microsoft.com/fwlink/?linkid=2123754.
-        [HttpPost]
-        public async Task<ActionResult<Messages>> PostMessages(Messages messages)
-        {
-            _context.Messages.Add(messages);
-            await _context.SaveChangesAsync();
-
-            return CreatedAtAction("GetMessages", new { id = messages.Id }, messages);
-        }
-
-        // DELETE: api/Messages/5
-        [HttpDelete("{id}")]
-        public async Task<ActionResult<Messages>> DeleteMessages(int id)
-        {
-            var messages = await _context.Messages.FindAsync(id);
-            if (messages == null)
+            if (messages.Count > 0)
             {
-                return NotFound();
+                _context.Messages.UpdateRange(messages);
+                await _context.SaveChangesAsync();
             }
 
-            _context.Messages.Remove(messages);
-            await _context.SaveChangesAsync();
-
-            return messages;
-        }
-
-        private bool MessagesExists(int id)
-        {
-            return _context.Messages.Any(e => e.Id == id);
+            return Ok();
         }
     }
 }

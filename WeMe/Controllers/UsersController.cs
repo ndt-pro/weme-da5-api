@@ -42,7 +42,6 @@ namespace WeMe.Controllers
         {
             string email = formData["Email"].ToString();
             string password = formData["Password"].ToString();
-
             var user = _authenticateService.Authenticate(email, password);
 
             if (user == null)
@@ -120,12 +119,13 @@ namespace WeMe.Controllers
             return users;
         }
 
-        [HttpPut("{id}")]
-        public async Task<IActionResult> PutUsers(int id, [FromBody] Users users)
+        [HttpPut]
+        public async Task<IActionResult> PutUsers([FromBody] Users users)
         {
+            int userId = int.Parse(User.Identity.Name);
             try
             {
-                var user = _context.Users.Find(id);
+                var user = _context.Users.Find(userId);
 
                 user.FullName = users.FullName;
                 user.PhoneNumber = users.PhoneNumber;
@@ -148,7 +148,7 @@ namespace WeMe.Controllers
             }
             catch (DbUpdateConcurrencyException)
             {
-                if (!UsersExists(id))
+                if (!UsersExists(userId))
                 {
                     return NotFound();
                 }
