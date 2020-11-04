@@ -14,7 +14,7 @@ using WeMe.Services;
 
 namespace WeMe.Controllers
 {
-    //[Authorize]
+    [Authorize]
     [Route("api/[controller]")]
     [ApiController]
     public class MessagesController : ControllerBase

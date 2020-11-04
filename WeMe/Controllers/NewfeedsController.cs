@@ -29,6 +29,33 @@ namespace WeMe.Controllers
             _fileService = fileService;
         }
 
+        [HttpGet("{id}")]
+        public ActionResult GetNewfeedById(int id)
+        {
+            int userId = int.Parse(User.Identity.Name);
+
+            var list = _context.Newfeeds
+                .Select(newfeed => new
+                {
+                    user = new
+                    {
+                        newfeed.IdUserNavigation.Id,
+                        newfeed.IdUserNavigation.FullName,
+                        newfeed.IdUserNavigation.Avatar
+                    },
+                    id = newfeed.Id,
+                    content = newfeed.Content,
+                    media = newfeed.Media,
+                    createdAt = newfeed.CreatedAt,
+                    countLike = newfeed.NewfeedLikes.Count,
+                    countComment = newfeed.NewfeedComments.Count,
+                    liked = newfeed.NewfeedLikes.FirstOrDefault(like => like.IdUser == userId) != null
+                })
+                .FirstOrDefault(newfeed => newfeed.id == id);
+
+            return Ok(list);
+        }
+
         // GET: api/Newfeeds
         [HttpGet]
         public ActionResult GetNewfeeds(int page, int pageSize)
@@ -59,7 +86,7 @@ namespace WeMe.Controllers
             return Ok(data.Results);
         }
 
-        [HttpGet("{id}")]
+        [HttpGet("get-newfeeds-user/{id}")]
         public ActionResult GetNewfeedsUser(int id, int page, int pageSize)
         {
             int userId = int.Parse(User.Identity.Name);
